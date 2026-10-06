@@ -1,6 +1,6 @@
 import { NotFoundError } from "../errors/AppError";
 import { EquipmentRepository } from "./equipment.repository";
-import { CreateEquipmentInput, Equipment } from "./equipment.schema";
+import { CreateEquipmentInput, Equipment, UpdateEquipmentInput } from "./equipment.schema";
 
 // Service: business rules. Knows nothing about HTTP or SQL.
 export class EquipmentService {
@@ -18,5 +18,11 @@ export class EquipmentService {
 
   create(data: CreateEquipmentInput): Promise<Equipment> {
     return this.repo.create(data);
+  }
+
+    async update(id: number, data: UpdateEquipmentInput): Promise<Equipment> {
+    const equipment = await this.repo.update(id, data);
+    if (!equipment) throw new NotFoundError("Equipment");
+    return equipment;
   }
 }
