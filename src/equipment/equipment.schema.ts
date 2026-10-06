@@ -7,17 +7,6 @@ export const createEquipmentSchema = z.object({
   location: z.string().trim().max(100).optional()
 });
 
-export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
-
-export interface Equipment {
-  id: number;
-  name: string;
-  category: string;
-  location: string | null;
-  status: "available" | "maintenance" | "retired";
-  createdAt: Date;
-}
-
 // PATCH = partial update: every field is optional, but at least one must be sent.
 export const updateEquipmentSchema = createEquipmentSchema
   .partial()
@@ -28,4 +17,14 @@ export const updateEquipmentSchema = createEquipmentSchema
     message: "At least one field is required"
   });
 
+export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
 export type UpdateEquipmentInput = z.infer<typeof updateEquipmentSchema>;
+
+export interface Equipment {
+  id: number;
+  name: string;
+  category: string;
+  location: string | null;
+  status: "available" | "maintenance" | "retired";
+  createdAt: Date;
+}

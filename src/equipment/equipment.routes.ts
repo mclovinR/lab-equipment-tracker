@@ -23,10 +23,17 @@ export function equipmentRouter(service: EquipmentService): Router {
     res.status(201).json(await service.create(data));
   });
 
-    router.patch("/:id", async (req, res) => {
+  router.patch("/:id", async (req, res) => {
     const id = idParam.parse(req.params.id);
     const data = updateEquipmentSchema.parse(req.body);
     res.json(await service.update(id, data));
+  });
+
+  router.delete("/:id", async (req, res) => {
+    const id = idParam.parse(req.params.id);
+    await service.remove(id);
+    // 204 No Content: success, nothing to send back.
+    res.status(204).end();
   });
 
   return router;

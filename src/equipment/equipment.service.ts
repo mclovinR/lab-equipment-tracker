@@ -20,9 +20,14 @@ export class EquipmentService {
     return this.repo.create(data);
   }
 
-    async update(id: number, data: UpdateEquipmentInput): Promise<Equipment> {
+  async update(id: number, data: UpdateEquipmentInput): Promise<Equipment> {
     const equipment = await this.repo.update(id, data);
     if (!equipment) throw new NotFoundError("Equipment");
     return equipment;
+  }
+
+  async remove(id: number): Promise<void> {
+    const deleted = await this.repo.delete(id);
+    if (!deleted) throw new NotFoundError("Equipment");
   }
 }
