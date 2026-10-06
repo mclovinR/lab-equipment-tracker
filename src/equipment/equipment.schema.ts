@@ -7,7 +7,18 @@ export const createEquipmentSchema = z.object({
   location: z.string().trim().max(100).optional()
 });
 
+// PATCH = partial update: every field is optional, but at least one must be sent.
+export const updateEquipmentSchema = createEquipmentSchema
+  .partial()
+  .extend({
+    status: z.enum(["available", "maintenance", "retired"]).optional()
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required"
+  });
+
 export type CreateEquipmentInput = z.infer<typeof createEquipmentSchema>;
+export type UpdateEquipmentInput = z.infer<typeof updateEquipmentSchema>;
 
 export interface Equipment {
   id: number;

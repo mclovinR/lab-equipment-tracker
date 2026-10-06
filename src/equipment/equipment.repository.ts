@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { CreateEquipmentInput, Equipment } from "./equipment.schema";
+import { CreateEquipmentInput, Equipment, UpdateEquipmentInput } from "./equipment.schema";
 
 // Interface = contract. The service depends on this, not on Postgres directly,
 // so in tests we can swap in a fake repository without a database.
@@ -7,6 +7,8 @@ export interface EquipmentRepository {
   findAll(): Promise<Equipment[]>;
   findById(id: number): Promise<Equipment | null>;
   create(data: CreateEquipmentInput): Promise<Equipment>;
+  update(id: number, data: UpdateEquipmentInput): Promise<Equipment | null>;
+  delete(id: number): Promise<boolean>;
 }
 
 const SELECT_COLUMNS = `id, name, category, location, status, created_at AS "createdAt"`;
@@ -40,5 +42,26 @@ export class PgEquipmentRepository implements EquipmentRepository {
       [data.name, data.category, data.location ?? null]
     );
     return rows[0];
+  }
+
+  async update(id: number, data: UpdateEquipmentInput): Promise<Equipment | null> {
+    // COALESCE(new, current): if a field was not sent (null), keep the current value.
+    const { rows } = await this.db.query<Equipment>(
+      `UPDATE equipment
+       SET name     = COALESCE($2, name),
+           category = COALESCE($3, category),
+           location = COALESCE($4, location),
+           status   = COALESCE($5, status)
+       WHERE id = $1
+       RETURNING ${SELECT_COLUMNS}`,
+      [id, data.name ?? null, data.category ?? null, data.location ?? null, data.status ?? null]
+    );
+    return rows[0] ?? null;
+  }
+
+  async delete(id: number): Promise<boolean> {
+    // rowCount = how many rows were deleted. 0 means the id didn't exist.
+    const result = await this.db.query(`DELETE FROM equipment WHERE id = $1`, [id]);
+    return (result.rowCount ?? 0) > 0;
   }
 }

@@ -1,7 +1,11 @@
 import request from "supertest";
 import { createApp } from "../src/app";
 import { EquipmentRepository } from "../src/equipment/equipment.repository";
-import { CreateEquipmentInput, Equipment } from "../src/equipment/equipment.schema";
+import {
+  CreateEquipmentInput,
+  Equipment,
+  UpdateEquipmentInput
+} from "../src/equipment/equipment.schema";
 
 // Fake repository: keeps data in memory, so tests run without Postgres (fast and CI-friendly).
 class InMemoryEquipmentRepository implements EquipmentRepository {
@@ -28,10 +32,29 @@ class InMemoryEquipmentRepository implements EquipmentRepository {
     this.items.push(item);
     return item;
   }
+
+  async update(id: number, data: UpdateEquipmentInput) {
+    const item = this.items.find((e) => e.id === id);
+    if (!item) return null;
+    Object.assign(item, data);
+    return item;
+  }
+
+  async delete(id: number) {
+    const index = this.items.findIndex((e) => e.id === id);
+    if (index === -1) return false;
+    this.items.splice(index, 1);
+    return true;
+  }
 }
 
 function buildApp() {
   return createApp({ equipmentRepo: new InMemoryEquipmentRepository() });
+}
+
+// Helper: creates one equipment item so each test starts with known data.
+async function seedOne(app: ReturnType<typeof buildApp>) {
+  await request(app).post("/api/equipment").send({ name: "Oscilloscope", category: "measurement" });
 }
 
 describe("GET /health", () => {
@@ -70,5 +93,56 @@ describe("Equipment API", () => {
   it("returns 400 for a non-numeric id", async () => {
     const res = await request(buildApp()).get("/api/equipment/abc");
     expect(res.status).toBe(400);
+  });
+});
+
+describe("PATCH /api/equipment/:id", () => {
+  it("updates only the fields sent", async () => {
+    const app = buildApp();
+    await seedOne(app);
+
+    const res = await request(app).patch("/api/equipment/1").send({ status: "maintenance" });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("maintenance");
+    expect(res.body.name).toBe("Oscilloscope");
+  });
+
+  it("rejects an empty body with 400", async () => {
+    const app = buildApp();
+    await seedOne(app);
+
+    const res = await request(app).patch("/api/equipment/1").send({});
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an invalid status with 400", async () => {
+    const app = buildApp();
+    await seedOne(app);
+
+    const res = await request(app).patch("/api/equipment/1").send({ status: "broken" });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for missing equipment", async () => {
+    const res = await request(buildApp()).patch("/api/equipment/99").send({ status: "retired" });
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("DELETE /api/equipment/:id", () => {
+  it("deletes equipment and returns 204", async () => {
+    const app = buildApp();
+    await seedOne(app);
+
+    const res = await request(app).delete("/api/equipment/1");
+    expect(res.status).toBe(204);
+
+    const after = await request(app).get("/api/equipment/1");
+    expect(after.status).toBe(404);
+  });
+
+  it("returns 404 for missing equipment", async () => {
+    const res = await request(buildApp()).delete("/api/equipment/99");
+    expect(res.status).toBe(404);
   });
 });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { createEquipmentSchema } from "./equipment.schema";
+import { createEquipmentSchema, updateEquipmentSchema } from "./equipment.schema";
 import { EquipmentService } from "./equipment.service";
 
 const idParam = z.coerce.number().int().positive();
@@ -21,6 +21,19 @@ export function equipmentRouter(service: EquipmentService): Router {
   router.post("/", async (req, res) => {
     const data = createEquipmentSchema.parse(req.body);
     res.status(201).json(await service.create(data));
+  });
+
+  router.patch("/:id", async (req, res) => {
+    const id = idParam.parse(req.params.id);
+    const data = updateEquipmentSchema.parse(req.body);
+    res.json(await service.update(id, data));
+  });
+
+  router.delete("/:id", async (req, res) => {
+    const id = idParam.parse(req.params.id);
+    await service.remove(id);
+    // 204 No Content: success, nothing to send back.
+    res.status(204).end();
   });
 
   return router;
