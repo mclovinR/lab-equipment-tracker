@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.env
+backups/
+reports/
+__pycache__/
+GUIA.md
