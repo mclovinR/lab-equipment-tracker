@@ -1,57 +1,5 @@
 import request from "supertest";
-import { createApp } from "../src/app";
-import { EquipmentRepository } from "../src/equipment/equipment.repository";
-import {
-  CreateEquipmentInput,
-  Equipment,
-  UpdateEquipmentInput
-} from "../src/equipment/equipment.schema";
-
-// Fake repository: keeps data in memory, so tests run without Postgres (fast and CI-friendly).
-class InMemoryEquipmentRepository implements EquipmentRepository {
-  private items: Equipment[] = [];
-  private nextId = 1;
-
-    async findAll(category?: string) {
-    if (!category) return [...this.items];
-    return this.items.filter((e) => e.category === category);
-  }
-
-  async findById(id: number) {
-    return this.items.find((e) => e.id === id) ?? null;
-  }
-
-  async create(data: CreateEquipmentInput) {
-    const item: Equipment = {
-      id: this.nextId++,
-      name: data.name,
-      category: data.category,
-      location: data.location ?? null,
-      status: "available",
-      createdAt: new Date()
-    };
-    this.items.push(item);
-    return item;
-  }
-
-  async update(id: number, data: UpdateEquipmentInput) {
-    const item = this.items.find((e) => e.id === id);
-    if (!item) return null;
-    Object.assign(item, data);
-    return item;
-  }
-
-  async delete(id: number) {
-    const index = this.items.findIndex((e) => e.id === id);
-    if (index === -1) return false;
-    this.items.splice(index, 1);
-    return true;
-  }
-}
-
-function buildApp() {
-  return createApp({ equipmentRepo: new InMemoryEquipmentRepository() });
-}
+import { buildApp } from "./fakes";
 
 // Helper: creates one equipment item so each test starts with known data.
 async function seedOne(app: ReturnType<typeof buildApp>) {
