@@ -15,3 +15,11 @@ export class NotFoundError extends AppError {
     this.name = "NotFoundError";
   }
 }
+
+// 409 Conflict: the request is valid, but clashes with existing data (e.g. a duplicate email).
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(409, message);
+    this.name = "ConflictError";
+  }
+}
