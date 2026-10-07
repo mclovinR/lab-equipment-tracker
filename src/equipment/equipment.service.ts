@@ -6,8 +6,8 @@ import { CreateEquipmentInput, Equipment, UpdateEquipmentInput } from "./equipme
 export class EquipmentService {
   constructor(private readonly repo: EquipmentRepository) {}
 
-  list(): Promise<Equipment[]> {
-    return this.repo.findAll();
+  list(category?: string): Promise<Equipment[]> {
+    return this.repo.findAll(category);
   }
 
   async getById(id: number): Promise<Equipment> {

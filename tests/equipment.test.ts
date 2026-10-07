@@ -12,8 +12,9 @@ class InMemoryEquipmentRepository implements EquipmentRepository {
   private items: Equipment[] = [];
   private nextId = 1;
 
-  async findAll() {
-    return this.items;
+    async findAll(category?: string) {
+    if (!category) return [...this.items];
+    return this.items.filter((e) => e.category === category);
   }
 
   async findById(id: number) {
@@ -93,6 +94,18 @@ describe("Equipment API", () => {
   it("returns 400 for a non-numeric id", async () => {
     const res = await request(buildApp()).get("/api/equipment/abc");
     expect(res.status).toBe(400);
+  });
+
+    it("filters equipment by category", async () => {
+    const app = buildApp();
+    await request(app).post("/api/equipment").send({ name: "Oscilloscope", category: "measurement" });
+    await request(app).post("/api/equipment").send({ name: "Raspberry Pi", category: "computing" });
+
+    const res = await request(app).get("/api/equipment?category=computing");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe("Raspberry Pi");
   });
 });
 
