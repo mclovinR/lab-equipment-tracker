@@ -10,7 +10,8 @@ export function equipmentRouter(service: EquipmentService): Router {
   const router = Router();
 
   router.get("/", async (_req, res) => {
-    res.json(await service.list());
+    const category = z.string().trim().min(1).optional().parse(_req.query.category);
+    res.json(await service.list(category));
   });
 
   router.get("/:id", async (req, res) => {

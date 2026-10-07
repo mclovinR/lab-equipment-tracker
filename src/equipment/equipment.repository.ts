@@ -4,7 +4,7 @@ import { CreateEquipmentInput, Equipment, UpdateEquipmentInput } from "./equipme
 // Interface = contract. The service depends on this, not on Postgres directly,
 // so in tests we can swap in a fake repository without a database.
 export interface EquipmentRepository {
-  findAll(): Promise<Equipment[]>;
+  findAll(category?: string): Promise<Equipment[]>;
   findById(id: number): Promise<Equipment | null>;
   create(data: CreateEquipmentInput): Promise<Equipment>;
   update(id: number, data: UpdateEquipmentInput): Promise<Equipment | null>;
@@ -17,13 +17,21 @@ const SELECT_COLUMNS = `id, name, category, location, status, created_at AS "cre
 export class PgEquipmentRepository implements EquipmentRepository {
   constructor(private readonly db: Pool) {}
 
-  async findAll(): Promise<Equipment[]> {
+    async findAll(category?: string): Promise<Equipment[]> {
+    if (category) {
+      const { rows } = await this.db.query<Equipment>(
+        `SELECT ${SELECT_COLUMNS} FROM equipment WHERE category = $1 ORDER BY id`,
+        [category]
+      );
+      return rows;
+    }
+
     const { rows } = await this.db.query<Equipment>(
       `SELECT ${SELECT_COLUMNS} FROM equipment ORDER BY id`
     );
     return rows;
   }
-
+  
   async findById(id: number): Promise<Equipment | null> {
     // $1 is a parameter: pg escapes it, which prevents SQL injection.
     const { rows } = await this.db.query<Equipment>(
