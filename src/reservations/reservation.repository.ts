@@ -7,6 +7,7 @@ export interface ReservationRepository {
     findById(id: number): Promise<Reservation | null>;
     create(data: CreateReservationInput): Promise<Reservation>;
     hasOverlap(equipmentId: number, startsAt: Date, endsAt: Date): Promise<boolean>;
+    cancel(id: number): Promise<Reservation | null>;
 }
 
 const SELECT_COLUMNS = `id, equipment_id AS "equipmentId", user_id AS "userId",
@@ -63,5 +64,16 @@ export class PgReservationRepository implements ReservationRepository {
             [equipmentId, startsAt, endsAt]
         );
         return rows[0].overlap;
+    }
+
+    async cancel(id: number): Promise<Reservation | null> {
+        const { rows } = await this.db.query<Reservation>(
+            `UPDATE reservations
+       SET status = 'cancelled'
+       WHERE id = $1
+       RETURNING ${SELECT_COLUMNS}`,
+            [id]
+        );
+        return rows[0] ?? null;
     }
 }
