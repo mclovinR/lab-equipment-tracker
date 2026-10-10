@@ -3,10 +3,12 @@ import { env } from "./config/env";
 import { pool } from "./db/pool";
 import { PgEquipmentRepository } from "./equipment/equipment.repository";
 import { PgUserRepository } from "./users/user.repository";
+import { PgReservationRepository } from "./reservations/reservation.repository";
 
 const app = createApp({
   equipmentRepo: new PgEquipmentRepository(pool),
-  userRepo: new PgUserRepository(pool)
+  userRepo: new PgUserRepository(pool),
+  reservationRepo: new PgReservationRepository(pool)  
 });
 
 app.listen(env.port, () => {

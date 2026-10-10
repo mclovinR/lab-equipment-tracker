@@ -7,7 +7,12 @@ import {
 } from "../src/equipment/equipment.schema";
 import { UserRepository } from "../src/users/user.repository";
 import { CreateUserInput, UpdateUserInput, User } from "../src/users/user.schema";
-
+import { ReservationRepository } from "../src/reservations/reservation.repository";
+import {
+  CreateReservationInput,
+  Reservation,
+  ReservationFilters
+} from "../src/reservations/reservation.schema";
 // Fake repositories: keep data in memory, so tests run without Postgres (fast and CI-friendly).
 
 export class InMemoryEquipmentRepository implements EquipmentRepository {
@@ -86,11 +91,41 @@ export class InMemoryUserRepository implements UserRepository {
     return user;
   }
 }
+export class InMemoryReservationRepository implements ReservationRepository {
+  private items: Reservation[] = [];
+  private nextId = 1;
+
+  async findAll(filters: ReservationFilters) {
+    return this.items
+      .filter((r) => !filters.equipmentId || r.equipmentId === filters.equipmentId)
+      .filter((r) => !filters.userId || r.userId === filters.userId)
+      .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+  }
+
+  async findById(id: number) {
+    return this.items.find((r) => r.id === id) ?? null;
+  }
+
+  async create(data: CreateReservationInput) {
+    const reservation: Reservation = {
+      id: this.nextId++,
+      equipmentId: data.equipmentId,
+      userId: data.userId,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+      status: "active",
+      createdAt: new Date()
+    };
+    this.items.push(reservation);
+    return reservation;
+  }
+}
 
 // Builds a fresh app with empty fake repositories for each test.
 export function buildApp() {
   return createApp({
     equipmentRepo: new InMemoryEquipmentRepository(),
-    userRepo: new InMemoryUserRepository()
+    userRepo: new InMemoryUserRepository(),
+    reservationRepo: new InMemoryReservationRepository()
   });
 }
