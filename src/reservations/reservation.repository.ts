@@ -6,6 +6,7 @@ export interface ReservationRepository {
     findAll(filters: ReservationFilters): Promise<Reservation[]>;
     findById(id: number): Promise<Reservation | null>;
     create(data: CreateReservationInput): Promise<Reservation>;
+    hasOverlap(equipmentId: number, startsAt: Date, endsAt: Date): Promise<boolean>;
 }
 
 const SELECT_COLUMNS = `id, equipment_id AS "equipmentId", user_id AS "userId",
@@ -45,5 +46,22 @@ export class PgReservationRepository implements ReservationRepository {
             [data.equipmentId, data.userId, data.startsAt, data.endsAt]
         );
         return rows[0];
+    }
+
+    async hasOverlap(equipmentId: number, startsAt: Date, endsAt: Date): Promise<boolean> {
+        // Same rule as rangesOverlap(), but done by the database:
+        // an active reservation of the same equipment that starts before ours ends
+        // and ends after ours starts.
+        const { rows } = await this.db.query<{ overlap: boolean }>(
+            `SELECT EXISTS (
+         SELECT 1 FROM reservations
+         WHERE equipment_id = $1
+           AND status = 'active'
+           AND starts_at < $3
+           AND ends_at > $2
+       ) AS overlap`,
+            [equipmentId, startsAt, endsAt]
+        );
+        return rows[0].overlap;
     }
 }
