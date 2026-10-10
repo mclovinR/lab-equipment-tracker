@@ -13,6 +13,7 @@ import {
   Reservation,
   ReservationFilters
 } from "../src/reservations/reservation.schema";
+import { rangesOverlap } from "../src/reservations/reservation.rules";
 // Fake repositories: keep data in memory, so tests run without Postgres (fast and CI-friendly).
 
 export class InMemoryEquipmentRepository implements EquipmentRepository {
@@ -118,6 +119,15 @@ export class InMemoryReservationRepository implements ReservationRepository {
     };
     this.items.push(reservation);
     return reservation;
+  }
+
+  async hasOverlap(equipmentId: number, startsAt: Date, endsAt: Date) {
+    return this.items.some(
+      (r) =>
+        r.equipmentId === equipmentId &&
+        r.status === "active" &&
+        rangesOverlap(r, { startsAt, endsAt })
+    );
   }
 }
 
