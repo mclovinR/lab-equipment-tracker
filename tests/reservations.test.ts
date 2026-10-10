@@ -135,4 +135,21 @@ describe("Reservations API", () => {
     const res = await request(app).post("/api/reservations").send(validReservation({ equipmentId: 2 }));
     expect(res.status).toBe(201);
   });
+
+  it("returns a reservation by id", async () => {
+    const app = buildApp();
+    await seed(app);
+    const created = await request(app).post("/api/reservations").send(validReservation());
+    expect(created.status).toBe(201);
+
+    const res = await request(app).get("/api/reservations/1");
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(1);
+  });
+
+  it("returns 404 for a missing reservation", async () => {
+    const res = await request(buildApp()).get("/api/reservations/99");
+    expect(res.status).toBe(404);
+  });
+
 });
