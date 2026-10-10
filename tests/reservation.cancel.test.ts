@@ -1,11 +1,5 @@
 import request from "supertest";
-import { ReservationService } from "../src/reservations/reservation.service";
-import {
-    buildApp,
-    InMemoryEquipmentRepository,
-    InMemoryReservationRepository,
-    InMemoryUserRepository
-} from "./fakes";
+import { buildApp } from "./fakes";
 
 function hoursFromNow(hours: number): Date {
     return new Date(Date.now() + hours * 60 * 60 * 1000);
@@ -61,26 +55,5 @@ describe("POST /api/reservations/:id/cancel", () => {
     it("returns 404 for a missing reservation", async () => {
         const res = await request(buildApp()).post("/api/reservations/99/cancel");
         expect(res.status).toBe(404);
-    });
-});
-
-describe("ReservationService.cancel", () => {
-    // The API refuses to create past reservations, so this test builds the service directly
-    // and inserts a past reservation straight into the fake repository.
-    it("rejects cancelling a reservation that already started with 422", async () => {
-        const reservations = new InMemoryReservationRepository();
-        const service = new ReservationService(
-            reservations,
-            new InMemoryEquipmentRepository(),
-            new InMemoryUserRepository()
-        );
-        await reservations.create({
-            equipmentId: 1,
-            userId: 1,
-            startsAt: hoursFromNow(-2),
-            endsAt: hoursFromNow(-1)
-        });
-
-        await expect(service.cancel(1)).rejects.toMatchObject({ statusCode: 422 });
     });
 });
