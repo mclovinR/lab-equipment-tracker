@@ -6,10 +6,14 @@ import { UserRepository } from "./users/user.repository";
 import { userRouter } from "./users/user.routes";
 import { UserService } from "./users/user.service";
 import { errorHandler } from "./middleware/errorHandler";
+import { ReservationRepository } from "./reservations/reservation.repository";
+import { reservationRouter } from "./reservations/reservation.routes";
+import { ReservationService } from "./reservations/reservation.service";
 
 export interface AppDependencies {
   equipmentRepo: EquipmentRepository;
   userRepo: UserRepository;
+  reservationRepo: ReservationRepository;   
 }
 
 // createApp receives its dependencies instead of creating them (dependency injection).
@@ -24,7 +28,7 @@ export function createApp(deps: AppDependencies) {
 
   app.use("/api/equipment", equipmentRouter(new EquipmentService(deps.equipmentRepo)));
   app.use("/api/users", userRouter(new UserService(deps.userRepo)));
-
+  app.use("/api/reservations", reservationRouter(new ReservationService(deps.reservationRepo, deps.equipmentRepo, deps.userRepo))); 
   app.use((_req, res) => {
     res.status(404).json({ error: "Route not found" });
   });
