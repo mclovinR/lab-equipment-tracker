@@ -129,6 +129,12 @@ export class InMemoryReservationRepository implements ReservationRepository {
         rangesOverlap(r, { startsAt, endsAt })
     );
   }
+  async cancel(id: number) {
+    const reservation = this.items.find((r) => r.id === id);
+    if (!reservation) return null;
+    reservation.status = "cancelled";
+    return reservation;
+  }
 }
 
 // Builds a fresh app with empty fake repositories for each test.

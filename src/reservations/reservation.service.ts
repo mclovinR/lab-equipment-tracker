@@ -21,7 +21,7 @@ export class ReservationService {
         if (!reservation) throw new NotFoundError("Reservation");
         return reservation;
     }
-
+    // Business rules are enforced here, not in the repository. The repository is just a thin layer that writes SQL.
     async create(data: CreateReservationInput): Promise<Reservation> {
 
         const equipment = await this.equipment.findById(data.equipmentId);
@@ -35,10 +35,6 @@ export class ReservationService {
         const user = await this.users.findById(data.userId);
         if (!user) throw new NotFoundError("User");
 
-        if (!(await this.users.findById(data.userId))) {
-            throw new NotFoundError("User");
-        }
-
         if (data.startsAt <= new Date()) {
             throw new AppError(422, "Reservations must start in the future");
         }
@@ -49,4 +45,23 @@ export class ReservationService {
 
         return this.reservations.create(data);
     }
+
+    // Cancel a reservation. Business rules: cannot cancel a reservation that already started, and cannot cancel twice.
+    async cancel(id: number): Promise<Reservation> {
+
+        const reservation = await this.reservations.findById(id);
+        if (!reservation) throw new NotFoundError("Reservation");
+
+        if (reservation.status === "cancelled") {
+            throw new ConflictError("Reservation is already cancelled");
+        }
+
+        if (reservation.startsAt <= new Date()) {
+            throw new AppError(422, "Reservations that already started cannot be cancelled");
+        }
+        const cancelled = await this.reservations.cancel(id);
+        if (!cancelled) throw new NotFoundError("Reservation");
+        return cancelled;
+    }
+
 }
